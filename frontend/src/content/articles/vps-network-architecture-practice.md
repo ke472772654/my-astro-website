@@ -1,31 +1,46 @@
 ---
-title: 零成本搭建轻量级 VPS 网络与 CI/CD 自动化部署架构
-description: 记录一次真实的云端 VPS 基础网络配置、Nginx 静态服务搭建与 GitHub Actions 自动部署上线全过程。
+title: VPS 网络架构实战：从域名解析到安全部署
+description: 记录个人网站部署过程中 DNS、HTTPS、SSH、自动化发布与主机密钥校验的完整实践。
 pubDate: 2026-09-10
 channel: ai
 category: cases
 tags:
   - VPS
-  - Nginx
+  - 网络架构
   - GitHub Actions
-  - CI/CD
+  - 自动化部署
 type: article
-featured: true
+featured: false
 pinned: false
 ---
 
-## 背景
+## 为什么要搭建这套网络架构
 
-在个人项目落地过程中，拥有一个稳定、安全且具备自动化部署能力的网络节点是基础设施的第一步。本文记录了基于美国节点 VPS 搭建轻量级 Nginx 静态站点，并接入 GitHub Actions 实现无感持续集成的完整实战过程。
+这里写你的背景和目标，例如：为个人网站建立稳定、安全、可自动部署的生产环境。
 
-## 基础设施配置
+## 整体架构
 
-### 1. 安全隔离与自定义端口
-为了保障基础节点的通信安全与服务隔离，系统采用自定义 SSH 端口策略：
-- **服务隔离**：将控制台连接服务迁移至非标准端口 `5522`，有效削弱了公网爆破攻击。
-- **防火墙放行**：通过 `ufw` 放行基础 Web 端口与控制端口，确保外部 HTTP 流量与控制流互不干扰。
+- 域名：`keke-v2.com` 与 `www.keke-v2.com`
+- 服务器：美国 VPS
+- 静态站点：Astro
+- 自动化部署：GitHub Actions
+- 传输方式：SSH + rsync
+- SSH 端口：5522
 
-```bash
-# 允许 HTTP 与自定义控制端口
-ufw allow 80/tcp
-ufw allow 5522/tcp
+## DNS 与 HTTPS 配置
+
+写域名解析、证书、主域名与 www 域名跳转的处理。
+
+## GitHub Actions 自动部署
+
+写从 Git 提交、前端构建、测试、SSH 连接，到同步静态文件和原子切换的流程。
+
+## SSH 安全配置与踩坑
+
+写主机密钥校验、`SERVER_KNOWN_HOSTS`、密钥权限和本次排查过程。
+
+## 最终复盘
+
+- 已解决的问题：
+- 仍需优化的部分：
+- 下次部署的检查清单：
