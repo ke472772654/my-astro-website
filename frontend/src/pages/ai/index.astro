@@ -1,0 +1,15 @@
+---
+import { getCollection } from 'astro:content';
+import ArticleCard from '../../components/ArticleCard.astro';
+import ChannelNav from '../../components/ChannelNav.astro';
+import NoteCard from '../../components/NoteCard.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { sortPosts } from '../../lib/content';
+import { getCategoryLabel } from '../../lib/taxonomy';
+
+const posts = sortPosts([...(await getCollection('articles')), ...(await getCollection('notes'))].filter((post) => post.data.channel === 'ai'));
+---
+
+<BaseLayout title="AI 应用技术分享 · 知行之间">
+  <div class="page-shell"><ChannelNav /><main class="channel-page"><p class="section-label">AI 应用技术分享</p><h1>从理解工具，到完成真实案例。</h1><p>记录大模型学习、AI Coding 工作流与可复用的应用实践。</p><div class="post-grid">{posts.map((post) => post.data.type === 'article' ? <ArticleCard title={post.data.title} description={post.data.description} channel="AI 应用技术分享" category={getCategoryLabel('ai', post.data.category)} date={post.data.pubDate} href={`/ai/${post.id}/`} /> : <NoteCard title={post.data.title} description={post.data.description} channel="AI 应用技术分享" date={post.data.pubDate} href={`/ai/${post.id}/`} />)}</div></main></div>
+</BaseLayout>

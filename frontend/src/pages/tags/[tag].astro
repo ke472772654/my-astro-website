@@ -1,0 +1,19 @@
+---
+import { getCollection } from 'astro:content';
+import ArticleCard from '../../components/ArticleCard.astro';
+import NoteCard from '../../components/NoteCard.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ChannelNav from '../../components/ChannelNav.astro';
+import { sortPosts } from '../../lib/content';
+import { CHANNELS, getCategoryLabel } from '../../lib/taxonomy';
+
+export async function getStaticPaths() {
+  const posts = [...(await getCollection('articles')), ...(await getCollection('notes'))];
+  return [...new Set(posts.flatMap((post) => post.data.tags))].map((tag) => ({ params: { tag }, props: { tag } }));
+}
+
+const { tag } = Astro.props;
+const posts = sortPosts([...(await getCollection('articles')), ...(await getCollection('notes'))].filter((post) => post.data.tags.includes(tag)));
+---
+
+<BaseLayout title={`#${tag} · 知行之间`}><div class="page-shell"><ChannelNav /><main class="channel-page"><p class="section-label">标签归档</p><h1>#{tag}</h1><div class="post-grid">{posts.map((post) => post.data.type === 'article' ? <ArticleCard title={post.data.title} description={post.data.description} channel={CHANNELS[post.data.channel]} category={getCategoryLabel(post.data.channel, post.data.category)} date={post.data.pubDate} href={`/${post.data.channel}/${post.id}/`} /> : <NoteCard title={post.data.title} description={post.data.description} channel={CHANNELS[post.data.channel]} date={post.data.pubDate} href={`/${post.data.channel}/${post.id}/`} />)}</div></main></div></BaseLayout>

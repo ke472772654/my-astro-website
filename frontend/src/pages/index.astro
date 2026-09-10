@@ -1,0 +1,78 @@
+---
+import { getCollection } from 'astro:content';
+import ArticleCard from '../components/ArticleCard.astro';
+import ChannelNav from '../components/ChannelNav.astro';
+import NoteCard from '../components/NoteCard.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getFeaturedPosts, sortPosts } from '../lib/content';
+import { CHANNELS, getCategoryLabel } from '../lib/taxonomy';
+
+const articles = await getCollection('articles');
+const notes = await getCollection('notes');
+const latestPosts = sortPosts([...articles, ...notes]);
+const featuredPost = getFeaturedPosts(latestPosts)[0] ?? latestPosts.find((post) => post.data.type === 'article');
+---
+
+<BaseLayout>
+  <div class="page-shell">
+    <ChannelNav />
+
+    <main>
+      <section class="hero" aria-labelledby="page-title">
+        <p class="hero-label"><span class="badge">个人知识库</span></p>
+        <h1 id="page-title">把学习、构建与交易，变成可复盘的系统。</h1>
+        <p>记录 AI 应用技术实践，也整理交易系统中的规则、执行与风险管理。</p>
+      </section>
+
+      {featuredPost && (
+        <section class="featured-post" aria-labelledby="featured-title">
+          <p class="section-label"><span class="badge">精选长文</span></p>
+          <h2 id="featured-title"><a href={`/${featuredPost.data.channel}/${featuredPost.id}/`}>{featuredPost.data.title}</a></h2>
+          <p>{featuredPost.data.description}</p>
+          <div class="post-meta">
+            <span class="badge">{CHANNELS[featuredPost.data.channel]}</span>
+            <span class="badge badge-muted">{getCategoryLabel(featuredPost.data.channel, featuredPost.data.category)}</span>
+            <time datetime={featuredPost.data.pubDate.toISOString()}>{featuredPost.data.pubDate.toLocaleDateString('zh-CN')}</time>
+          </div>
+        </section>
+      )}
+
+      <section class="channel-links" aria-label="内容频道">
+        <a href="/ai/">
+          <span>01</span>
+          <strong>AI 应用技术分享</strong>
+          <small>个人学习与总结、案例分享</small>
+        </a>
+        <a href="/trading/">
+          <span>02</span>
+          <strong>交易系统分享</strong>
+          <small>规则、风控与系统复盘</small>
+        </a>
+      </section>
+
+      <section class="latest-posts" aria-labelledby="latest-title">
+        <div class="section-heading"><p class="section-label"><span class="badge">持续更新</span></p><h2 id="latest-title">最新发布</h2></div>
+        <div class="post-grid">
+          {latestPosts.map((post) => post.data.type === 'article' ? (
+            <ArticleCard
+              title={post.data.title}
+              description={post.data.description}
+              channel={CHANNELS[post.data.channel]}
+              category={getCategoryLabel(post.data.channel, post.data.category)}
+              date={post.data.pubDate}
+              href={`/${post.data.channel}/${post.id}/`}
+            />
+          ) : (
+            <NoteCard
+              title={post.data.title}
+              description={post.data.description}
+              channel={CHANNELS[post.data.channel]}
+              date={post.data.pubDate}
+              href={`/${post.data.channel}/${post.id}/`}
+            />
+          ))}
+        </div>
+      </section>
+    </main>
+  </div>
+</BaseLayout>

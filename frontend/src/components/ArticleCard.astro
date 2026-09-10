@@ -1,0 +1,19 @@
+---
+interface Props {
+  title: string;
+  description: string;
+  channel: string;
+  category: string;
+  date: Date;
+  href: string;
+}
+
+const { title, description, channel, category, date, href } = Astro.props;
+---
+
+<article class="article-card">
+  <p class="card-kicker"><span class="badge">{channel}</span><span class="badge badge-muted">{category}</span></p>
+  <h3><a href={href}>{title}</a></h3>
+  <p>{description}</p>
+  <time datetime={date.toISOString()}>{date.toLocaleDateString('zh-CN')}</time>
+</article>

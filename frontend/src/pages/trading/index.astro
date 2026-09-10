@@ -1,0 +1,15 @@
+---
+import { getCollection } from 'astro:content';
+import ArticleCard from '../../components/ArticleCard.astro';
+import ChannelNav from '../../components/ChannelNav.astro';
+import NoteCard from '../../components/NoteCard.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { sortPosts } from '../../lib/content';
+import { getCategoryLabel } from '../../lib/taxonomy';
+
+const posts = sortPosts([...(await getCollection('articles')), ...(await getCollection('notes'))].filter((post) => post.data.channel === 'trading'));
+---
+
+<BaseLayout title="交易系统分享 · 知行之间">
+  <div class="page-shell"><ChannelNav /><main class="channel-page"><p class="section-label">交易系统分享</p><h1>以规则约束执行，以复盘校准系统。</h1><p>分享交易理念、箱体与均线相关研究、风控思路和系统复盘。内容仅为个人研究记录，不构成投资建议。</p><div class="post-grid">{posts.map((post) => post.data.type === 'article' ? <ArticleCard title={post.data.title} description={post.data.description} channel="交易系统分享" category={getCategoryLabel('trading', post.data.category)} date={post.data.pubDate} href={`/trading/${post.id}/`} /> : <NoteCard title={post.data.title} description={post.data.description} channel="交易系统分享" date={post.data.pubDate} href={`/trading/${post.id}/`} />)}</div></main></div>
+</BaseLayout>
