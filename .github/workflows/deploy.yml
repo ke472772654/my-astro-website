@@ -53,7 +53,7 @@ jobs:
           SERVER_DEPLOY_PATH: ${{ secrets.SERVER_DEPLOY_PATH }}
         run: |
           release_path="$SERVER_DEPLOY_PATH/releases/${GITHUB_SHA}"
-          ssh_command='ssh -i ~/.ssh/id_ed25519 -p 5522 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+          ssh_command='ssh -vvv -i ~/.ssh/id_ed25519 -p 5522 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
           ssh $ssh_command "$SERVER_USER@$SERVER_IP" "mkdir -p '$release_path' '$SERVER_DEPLOY_PATH/scripts'"
           rsync -az --delete -e "$ssh_command" frontend/dist/ "$SERVER_USER@$SERVER_IP:$release_path/"
           rsync -az -e "$ssh_command" backend/scripts/deploy.sh "$SERVER_USER@$SERVER_IP:$SERVER_DEPLOY_PATH/scripts/deploy.sh"
