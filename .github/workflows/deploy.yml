@@ -38,35 +38,23 @@ jobs:
           pnpm run build
           pnpm run test
 
-      - name: Configure SSH client and host-key compatibility
+      - name: Configure SSH private key
         env:
-          SERVER_IP: ${{ secrets.SERVER_IP }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
           SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
-          SERVER_KNOWN_HOSTS: ${{ secrets.SERVER_KNOWN_HOSTS }}
         run: |
           install -d -m 700 ~/.ssh
           printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/id_ed25519
-          printf '%s\n' "$SERVER_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          cat > ~/.ssh/config <<EOF
-          Host deploy-vps
-            HostName $SERVER_IP
-            User $SERVER_USER
-            Port 5522
-            IdentityFile ~/.ssh/id_ed25519
-            IdentitiesOnly yes
-            UserKnownHostsFile ~/.ssh/known_hosts
-            StrictHostKeyChecking yes
-            HostKeyAlgorithms +ssh-rsa
-          EOF
-          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/config
+          chmod 600 ~/.ssh/id_ed25519
 
       - name: Upload release and switch atomically
         env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
           SERVER_DEPLOY_PATH: ${{ secrets.SERVER_DEPLOY_PATH }}
         run: |
           release_path="$SERVER_DEPLOY_PATH/releases/${GITHUB_SHA}"
-          ssh deploy-vps "mkdir -p '$release_path' '$SERVER_DEPLOY_PATH/scripts'"
-          rsync -az --delete -e 'ssh -F ~/.ssh/config' frontend/dist/ "deploy-vps:$release_path/"
-          rsync -az -e 'ssh -F ~/.ssh/config' backend/scripts/deploy.sh "deploy-vps:$SERVER_DEPLOY_PATH/scripts/deploy.sh"
-          ssh deploy-vps "chmod 700 '$SERVER_DEPLOY_PATH/scripts/deploy.sh' && '$SERVER_DEPLOY_PATH/scripts/deploy.sh' '$release_path' '$SERVER_DEPLOY_PATH/current'"
+          ssh_command='ssh -i ~/.ssh/id_ed25519 -p 5522 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+          ssh $ssh_command "$SERVER_USER@$SERVER_IP" "mkdir -p '$release_path' '$SERVER_DEPLOY_PATH/scripts'"
+          rsync -az --delete -e "$ssh_command" frontend/dist/ "$SERVER_USER@$SERVER_IP:$release_path/"
+          rsync -az -e "$ssh_command" backend/scripts/deploy.sh "$SERVER_USER@$SERVER_IP:$SERVER_DEPLOY_PATH/scripts/deploy.sh"
+          ssh $ssh_command "$SERVER_USER@$SERVER_IP" "chmod 700 '$SERVER_DEPLOY_PATH/scripts/deploy.sh' && '$SERVER_DEPLOY_PATH/scripts/deploy.sh' '$release_path' '$SERVER_DEPLOY_PATH/current'"

@@ -25,10 +25,11 @@ describe('deployment workflow', () => {
     expect(workflow).toContain('SERVER_IP: ${{ secrets.SERVER_IP }}');
     expect(workflow).toContain('SERVER_USER: ${{ secrets.SERVER_USER }}');
     expect(workflow).toContain('SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}');
-    expect(workflow).toContain('SERVER_KNOWN_HOSTS: ${{ secrets.SERVER_KNOWN_HOSTS }}');
     expect(workflow).toContain('SERVER_DEPLOY_PATH: ${{ secrets.SERVER_DEPLOY_PATH }}');
-    expect(workflow).toContain('Port 5522');
-    expect(workflow).toContain('StrictHostKeyChecking yes');
+    expect(workflow).not.toContain('SERVER_KNOWN_HOSTS:');
+    expect(workflow).toContain('-p 5522');
+    expect(workflow).toContain('-o StrictHostKeyChecking=no');
+    expect(workflow).toContain('-o UserKnownHostsFile=/dev/null');
     expect(workflow).toContain('uses: pnpm/action-setup@v4');
     expect(workflow.indexOf('uses: pnpm/action-setup@v4')).toBeLessThan(workflow.indexOf('uses: actions/setup-node@v4'));
     expect(workflow.indexOf('pnpm run build')).toBeLessThan(workflow.indexOf('pnpm run test'));
