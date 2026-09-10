@@ -41,10 +41,12 @@ jobs:
       - name: Configure SSH private key
         env:
           SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SERVER_KNOWN_HOSTS: ${{ secrets.SERVER_KNOWN_HOSTS }}
         run: |
           install -d -m 700 ~/.ssh
           printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$SERVER_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
 
       - name: Upload release and switch atomically
         env:
@@ -53,7 +55,7 @@ jobs:
           SERVER_DEPLOY_PATH: ${{ secrets.SERVER_DEPLOY_PATH }}
         run: |
           release_path="$SERVER_DEPLOY_PATH/releases/${GITHUB_SHA}"
-          ssh_options=(-vvv -i ~/.ssh/id_ed25519 -p 5522 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null)
+          ssh_options=(-i ~/.ssh/id_ed25519 -p 5522 -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts)
           ssh "${ssh_options[@]}" "$SERVER_USER@$SERVER_IP" "mkdir -p '$release_path' '$SERVER_DEPLOY_PATH/scripts'"
           rsync -az --delete -e "ssh ${ssh_options[*]}" frontend/dist/ "$SERVER_USER@$SERVER_IP:$release_path/"
           rsync -az -e "ssh ${ssh_options[*]}" backend/scripts/deploy.sh "$SERVER_USER@$SERVER_IP:$SERVER_DEPLOY_PATH/scripts/deploy.sh"
