@@ -29,5 +29,7 @@ describe('deployment workflow', () => {
     expect(workflow).toContain('SERVER_DEPLOY_PATH: ${{ secrets.SERVER_DEPLOY_PATH }}');
     expect(workflow).toContain('Port 5522');
     expect(workflow).toContain('StrictHostKeyChecking yes');
+    expect(workflow).toContain('uses: pnpm/action-setup@v4');
+    expect(workflow.indexOf('uses: pnpm/action-setup@v4')).toBeLessThan(workflow.indexOf('uses: actions/setup-node@v4'));
   });
 });
