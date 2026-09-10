@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 const currentDir = fileURLToPath(new URL('.', import.meta.url));
 const deployScriptPath = resolve(currentDir, '../../backend/scripts/deploy.sh');
+const workflowPath = resolve(currentDir, '../../.github/workflows/deploy.yml');
 
 describe('deployment script', () => {
   it('validates the release before atomically switching the current symlink', async () => {
@@ -13,5 +14,20 @@ describe('deployment script', () => {
     expect(script).toContain('set -eu');
     expect(script).toContain('test -f "$release_dir/index.html"');
     expect(script).toContain('mv -Tf "${current_link}.next" "$current_link"');
+  });
+});
+
+describe('deployment workflow', () => {
+  it('uses the configured server secrets and a pinned SSH connection', async () => {
+    const workflow = await readFile(workflowPath, 'utf8');
+
+    expect(workflow).toContain('workflow_dispatch:');
+    expect(workflow).toContain('SERVER_IP: ${{ secrets.SERVER_IP }}');
+    expect(workflow).toContain('SERVER_USER: ${{ secrets.SERVER_USER }}');
+    expect(workflow).toContain('SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}');
+    expect(workflow).toContain('SERVER_KNOWN_HOSTS: ${{ secrets.SERVER_KNOWN_HOSTS }}');
+    expect(workflow).toContain('SERVER_DEPLOY_PATH: ${{ secrets.SERVER_DEPLOY_PATH }}');
+    expect(workflow).toContain('Port 5522');
+    expect(workflow).toContain('StrictHostKeyChecking yes');
   });
 });

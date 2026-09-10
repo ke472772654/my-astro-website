@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -34,24 +35,35 @@ jobs:
           pnpm run test
           pnpm run build
 
-      - name: Configure SSH client
+      - name: Configure SSH client and host-key compatibility
         env:
-          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SERVER_KNOWN_HOSTS: ${{ secrets.SERVER_KNOWN_HOSTS }}
         run: |
           install -d -m 700 ~/.ssh
-          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
-          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$SERVER_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host deploy-vps
+            HostName $SERVER_IP
+            User $SERVER_USER
+            Port 5522
+            IdentityFile ~/.ssh/id_ed25519
+            IdentitiesOnly yes
+            UserKnownHostsFile ~/.ssh/known_hosts
+            StrictHostKeyChecking yes
+            HostKeyAlgorithms +ssh-rsa
+          EOF
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/config
 
       - name: Upload release and switch atomically
         env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SERVER_DEPLOY_PATH: ${{ secrets.SERVER_DEPLOY_PATH }}
         run: |
-          release_path="$DEPLOY_PATH/releases/${GITHUB_SHA}"
-          ssh -i ~/.ssh/id_ed25519 "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$release_path' '$DEPLOY_PATH/scripts'"
-          rsync -az --delete -e 'ssh -i ~/.ssh/id_ed25519' frontend/dist/ "$DEPLOY_USER@$DEPLOY_HOST:$release_path/"
-          rsync -az -e 'ssh -i ~/.ssh/id_ed25519' backend/scripts/deploy.sh "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/scripts/deploy.sh"
-          ssh -i ~/.ssh/id_ed25519 "$DEPLOY_USER@$DEPLOY_HOST" "chmod 700 '$DEPLOY_PATH/scripts/deploy.sh' && '$DEPLOY_PATH/scripts/deploy.sh' '$release_path' '$DEPLOY_PATH/current'"
+          release_path="$SERVER_DEPLOY_PATH/releases/${GITHUB_SHA}"
+          ssh deploy-vps "mkdir -p '$release_path' '$SERVER_DEPLOY_PATH/scripts'"
+          rsync -az --delete -e 'ssh -F ~/.ssh/config' frontend/dist/ "deploy-vps:$release_path/"
+          rsync -az -e 'ssh -F ~/.ssh/config' backend/scripts/deploy.sh "deploy-vps:$SERVER_DEPLOY_PATH/scripts/deploy.sh"
+          ssh deploy-vps "chmod 700 '$SERVER_DEPLOY_PATH/scripts/deploy.sh' && '$SERVER_DEPLOY_PATH/scripts/deploy.sh' '$release_path' '$SERVER_DEPLOY_PATH/current'"
