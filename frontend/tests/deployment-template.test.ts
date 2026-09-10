@@ -28,7 +28,10 @@ describe('deployment workflow', () => {
     expect(workflow).toContain('SERVER_DEPLOY_PATH: ${{ secrets.SERVER_DEPLOY_PATH }}');
     expect(workflow).not.toContain('SERVER_KNOWN_HOSTS:');
     expect(workflow).toContain('-p 5522');
-    expect(workflow).toContain('ssh -vvv');
+    expect(workflow).toContain('-vvv -i ~/.ssh/id_ed25519');
+    expect(workflow).toContain('ssh_options=(');
+    expect(workflow).toContain('ssh "${ssh_options[@]}"');
+    expect(workflow).not.toContain('ssh $ssh_command');
     expect(workflow).toContain('-o StrictHostKeyChecking=no');
     expect(workflow).toContain('-o UserKnownHostsFile=/dev/null');
     expect(workflow).toContain('uses: pnpm/action-setup@v4');
